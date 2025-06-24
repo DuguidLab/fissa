@@ -135,7 +135,7 @@ def _reformat_polygons(polygons):
         # correct depth and convert to Polygon objects
         try:
             Polygon(polygons[0])
-        except (TypeError, AssertionError):
+        except (ValueError, TypeError, AssertionError):
             polygons = [polygons]
         new_polygons = []
         for poly in polygons:
