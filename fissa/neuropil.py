@@ -170,7 +170,7 @@ def separate(
             # the data now.
             estimator = sklearn.decomposition.FastICA(
                 n_components=n,
-                whiten=True,
+                whiten="arbitrary-variance",
                 max_iter=max_iter,
                 tol=tol,
                 random_state=random_state,
