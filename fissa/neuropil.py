@@ -196,7 +196,7 @@ def separate(
                 estimator = sklearn.decomposition.NMF(
                     init="nndsvdar" if W0 is None and H0 is None else "custom",
                     n_components=n,
-                    alpha=alpha,
+                    alpha_W=alpha,
                     l1_ratio=0.5,
                     tol=tol,
                     max_iter=max_iter,
