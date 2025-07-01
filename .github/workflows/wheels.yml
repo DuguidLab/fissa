@@ -8,68 +8,62 @@ permissions:
   contents: write
 
 jobs:
-  build_wheels:
-    name: Build wheels on ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, ubuntu-24.04-arm, windows-latest, macos-13, macos-14]
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Build wheels
-        uses: pypa/cibuildwheel@v2.23.3
-        env:
-          CIBW_SKIP: "*i686"  # Ignore i686, takes a long time and we don't need it
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: cibw-wheel-${{ matrix.os }}-${{ strategy.job-index }}
-          path: wheelhouse/*.whl
-
-  make_sdist:
-    name: Make SDist
+  build:
+    name: Build distribution
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Build SDist
-        run: pipx run build --sdist
-
-      - uses: actions/upload-artifact@v4
+      - name: Checkout
+        uses: actions/checkout@v4
         with:
-          name: cibw-sdist
-          path: dist/*.tar.gz
+          persist-credentials: false
+
+      - name: Set up python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Install pypa/build
+        run: python3 -m pip install build --user
+
+      - name: Build wheel
+        run: python3 -m build
+
+      - name: Store build
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-package-distributions
+          path: dist/
 
   release:
-    needs: [build_wheels, make_sdist]
     name: Release
+    needs: build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v4
         with:
-          pattern: cibw-*
-          path: dist
-          merge-multiple: true
+          path: dist/
 
       - uses: ncipollo/release-action@v1
         with:
           artifacts: "dist/*"
 
-  upload_all:
-    needs: [build_wheels, make_sdist]
+  publish:
     name: Upload to PyPI
+    needs: build
+    runs-on: ubuntu-latest
+
     environment: pypi
     permissions:
       id-token: write
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/download-artifact@v4
-        with:
-          pattern: cibw-*
-          path: dist
-          merge-multiple: true
 
-      - uses: pypa/gh-action-pypi-publish@release/v1
+    steps:
+      - name: Download artificats
+        uses: actions/download-artifact@v4
+        with:
+          name: python-package-distributions
+          path: dist/
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
 
